@@ -9,12 +9,12 @@ part of 'steel_crypt_base.dart';
 ///Create symmetric encryption machine (Crypt).
 class AesCrypt {
   core.String _mode;
-  core.String _key32;
+  Uint8List _key32;
   dynamic _encrypter;
   String _paddingName;
 
   ///Get this AesCrypt's key;
-  String get key {
+  Uint8List get key {
     return _key32;
   }
 
@@ -29,7 +29,7 @@ class AesCrypt {
   }
 
   ///Creates 'Crypt', serves as encrypter/decrypter of text.
-  AesCrypt(core.String inKey32,
+  AesCrypt(Uint8List inKey32,
       [core.String intype = 'gcm', core.String padding = 'pkcs7']) {
     _mode = intype;
     _key32 = inKey32;
@@ -59,72 +59,74 @@ class AesCrypt {
   }
 
   ///Encrypt (with iv) and return in base 64.
-  core.String encrypt(core.String input, [core.String iv = '']) {
+  Uint8List encrypt(Uint8List input, [Uint8List iv]) {
+    iv = iv ?? Uint8List(0);
     if (_mode != 'ecb') {
       if (_paddingName == 'none') {
-        var localKey = Uint8List.fromList(_key32.codeUnits);
-        var localIV = Uint8List.fromList(iv.codeUnits);
-        var localInput = utf8.encode(input);
+        var localKey = _key32;
+        var localIV = iv;
         var params =
         ParametersWithIV<KeyParameter>(KeyParameter(localKey), localIV);
         _encrypter..init(true, params);
-        var inter = _encrypter.process(localInput as Uint8List) as Uint8List;
-        return base64.encode(inter);
+        var inter = _encrypter.process(input) as Uint8List;
+        return inter;
       } else {
-        var key = Uint8List.fromList(_key32.codeUnits);
-        var ivLocal = Uint8List.fromList(iv.codeUnits);
+        var key = _key32;
+        var ivLocal = iv;
         CipherParameters params = PaddedBlockCipherParameters(
             ParametersWithIV<KeyParameter>(KeyParameter(key), ivLocal), null);
         var cipher = PaddedBlockCipher(
             'AES/' + _mode.toUpperCase() + '/' + _paddingName.toUpperCase());
         cipher..init(true, params);
-        var inter = cipher.process(utf8.encode(input) as Uint8List);
-        return base64.encode(inter);
+        var inter = cipher.process(input);
+        return inter;
       }
     } else {
-      var key = Uint8List.fromList(_key32.codeUnits);
+      var key = _key32;
       CipherParameters params =
       PaddedBlockCipherParameters(KeyParameter(key), null);
       var cipher = PaddedBlockCipher(
           'AES/' + _mode.toUpperCase() + '/' + _paddingName.toUpperCase());
       cipher..init(true, params);
-      var inter = cipher.process(utf8.encode(input) as Uint8List);
-      return base64.encode(inter);
+      var inter = cipher.process(input);
+      return inter;
     }
   }
 
   ///Decrypt base 64 (with iv) and return original.
-  core.String decrypt(core.String encrypted, [core.String iv = '']) {
+  Uint8List decrypt(Uint8List encrypted, [Uint8List iv]) {
+    iv = iv ?? Uint8List(0);
+
     if (_mode != 'ecb') {
       if (_paddingName == 'none') {
-        var localKey = Uint8List.fromList(_key32.codeUnits);
-        var localIV = Uint8List.fromList(iv.codeUnits);
-        var localInput = base64.decode(encrypted);
+        var localKey = _key32;
+        var localIV = iv;
+        var localInput = encrypted;
         var params =
         ParametersWithIV<KeyParameter>(KeyParameter(localKey), localIV);
         _encrypter..init(false, params);
         var inter = _encrypter.process(localInput);
-        return utf8.decode(inter as List<int>);
+        return inter as Uint8List;
       } else {
-        var key = Uint8List.fromList(_key32.codeUnits);
-        var ivLocal = Uint8List.fromList(iv.codeUnits);
+        var key = _key32;
+        var ivLocal = iv;
         CipherParameters params = PaddedBlockCipherParameters(
             ParametersWithIV(KeyParameter(key), ivLocal), null);
         var cipher = PaddedBlockCipher(
             'AES/' + _mode.toUpperCase() + '/' + _paddingName.toUpperCase());
         cipher..init(false, params);
-        var inter = cipher.process(base64.decode(encrypted));
-        return utf8.decode(inter);
+        var inter = cipher.process(encrypted);
+        return inter;
       }
     } else {
-      var key = Uint8List.fromList(_key32.codeUnits);
+      var key = _key32;
       CipherParameters params =
       PaddedBlockCipherParameters(KeyParameter(key), null);
       var cipher = PaddedBlockCipher(
           'AES/' + _mode.toUpperCase() + '/' + _paddingName.toUpperCase());
       cipher..init(false, params);
-      var inter = cipher.process(base64.decode(encrypted));
-      return utf8.decode(inter);
+      var inter = cipher.process(encrypted);
+      return inter;
     }
   }
 }

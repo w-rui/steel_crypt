@@ -11,7 +11,7 @@ class MacCrypt {
   String _type;
   dynamic _mac;
 
-  MacCrypt(String key, [String inType = 'CMAC', String algo = 'gcm']) {
+  MacCrypt(Uint8List key, [String inType = 'CMAC', String algo = 'gcm']) {
     _type = inType;
     if (_type == 'HMAC') {
       _mac = _HMAC(key, algo);
@@ -21,12 +21,12 @@ class MacCrypt {
   }
 
   ///Process and hash string
-  String process(String input) {
-    return _mac.process(input) as String;
+  Uint8List process(Uint8List input) {
+    return _mac.process(input) as Uint8List;
   }
 
   ///Check if plaintext matches previously hashed text
-  bool check(String plain, String processed) {
+  bool check(Uint8List plain, Uint8List processed) {
     return _mac.check(plain, processed) as bool;
   }
 }
@@ -35,20 +35,18 @@ class _HMAC {
   KeyParameter _listkey;
   String _algorithm;
 
-  _HMAC(String key, String algo) {
-    _listkey = KeyParameter(Uint8List.fromList(key.codeUnits));
+  _HMAC(Uint8List key, String algo) {
+    _listkey = KeyParameter(key);
     _algorithm = algo;
   }
 
-  String process(core.String input) {
-    var bytes = utf8.encode(input);
+  Uint8List process(Uint8List bytes) {
     final _tmp = HMac(Digest(_algorithm), 128)
       ..init(_listkey);
-    var val = _tmp.process(Uint8List.fromList(bytes));
-    return base64.encode(val);
+    return _tmp.process(bytes);
   }
 
-  bool check(String plain, String processed) {
+  bool check(Uint8List plain, Uint8List processed) {
     var newhash = process(plain);
     return newhash == processed;
   }
@@ -58,20 +56,18 @@ class _CMAC {
   KeyParameter _listkey;
   String _algorithm;
 
-  _CMAC(String key, algo) {
-    _listkey = KeyParameter(Uint8List.fromList(key.codeUnits));
+  _CMAC(Uint8List key, algo) {
+    _listkey = KeyParameter(key);
     _algorithm = algo as String;
   }
 
-  String process(String input) {
-    var bytes = utf8.encode(input);
+  Uint8List process(Uint8List input) {
     final _tmp = CMac(BlockCipher('AES/' + _algorithm.toUpperCase()), 64)
       ..init(_listkey);
-    var val = _tmp.process(Uint8List.fromList(bytes));
-    return base64.encode(val);
+    return _tmp.process(input);
   }
 
-  bool check(String plain, String processed) {
+  bool check(Uint8List plain, Uint8List processed) {
     var newhash = process(plain);
     return newhash == processed;
   }
